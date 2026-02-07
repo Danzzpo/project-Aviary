@@ -2,9 +2,10 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { Mail, Lock, Loader2, AlertCircle, ArrowLeft } from 'lucide-vue-next';
+// Ganti icon Mail jadi User agar lebih cocok untuk Username
+import { User, Lock, Loader2, AlertCircle, ArrowLeft } from 'lucide-vue-next';
 
-const email = ref('');
+const identity = ref(''); // Bisa Email atau Username
 const password = ref('');
 const isLoading = ref(false);
 const errorMessage = ref('');
@@ -16,11 +17,20 @@ const handleLogin = async () => {
   errorMessage.value = '';
 
   try {
-    await authStore.login(email.value, password.value);
-    // Jika sukses, arahkan ke dashboard (kita buat nanti)
+    // PERBAIKAN DI SINI:
+    // 1. Kita kirim sebagai OBJECT.
+    // 2. Key-nya TETAP 'email' karena Backend membacanya dari json:"email",
+    //    meskipun isinya username.
+    await authStore.login({
+      email: identity.value, 
+      password: password.value
+    });
+    
+    // Jika sukses, arahkan ke dashboard
     router.push('/dashboard'); 
   } catch (error) {
-    errorMessage.value = typeof error === 'string' ? error : 'Login gagal, periksa email/password';
+    // Tampilkan pesan error dari backend jika ada
+    errorMessage.value = error.response?.data?.error || 'Login gagal, periksa data Anda.';
   } finally {
     isLoading.value = false;
   }
@@ -42,7 +52,7 @@ const handleLogin = async () => {
           <ArrowLeft :size="16" class="mr-1" /> Kembali ke Home
         </RouterLink>
         <h2 class="text-3xl font-bold text-slate-800 mb-2">Selamat Datang</h2>
-        <p class="text-slate-500">Masuk untuk mengelola peternakan Anda</p>
+        <p class="text-slate-500">Masuk menggunakan Email atau Username</p>
       </div>
 
       <div v-if="errorMessage" class="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
@@ -53,17 +63,17 @@ const handleLogin = async () => {
       <form @submit.prevent="handleLogin" class="space-y-5">
         
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Email / Username</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <Mail :size="18" />
+              <User :size="18" />
             </div>
             <input 
-              v-model="email" 
-              type="email" 
+              v-model="identity" 
+              type="text" 
               required
               class="block w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition sm:text-sm"
-              placeholder="nama@email.com"
+              placeholder="Username atau Email"
             />
           </div>
         </div>

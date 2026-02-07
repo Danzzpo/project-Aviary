@@ -1,18 +1,22 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-// Views
+// 1. IMPORT VIEWS (HALAMAN PUBLIK)
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
+
+// 2. IMPORT LAYOUT & DASHBOARD VIEWS
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import DashboardHome from '../views/dashboard/DashboardHome.vue'
 import BirdListView from '../views/dashboard/BirdListView.vue'
 import PairingView from '../views/dashboard/PairingView.vue'
+import FinanceView from '../views/dashboard/FinanceView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // --- HALAMAN PUBLIK ---
     {
       path: '/',
       name: 'home',
@@ -22,36 +26,48 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginView,
-      meta: { guestOnly: true }
-       // Hanya boleh diakses kalau BELUM login
+      meta: { guestOnly: true } // Hanya untuk yang BELUM login
     },
     {
       path: '/register',
       name: 'register',
       component: RegisterView,
-      meta: { guestOnly: true } // Hanya boleh diakses kalau belum login
+      meta: { guestOnly: true } // Hanya untuk yang BELUM login
     },
+
+    // --- HALAMAN DASHBOARD (BUTUH LOGIN) ---
     {
       path: '/dashboard',
-      component: DashboardLayout, // Pakai Layout yang ada sidebarnya
-      meta: { requiresAuth: true }, // WAJIB Login
+      component: DashboardLayout, // Parent Layout (Sidebar + Navbar)
+      meta: { requiresAuth: true }, // Wajib Login
       children: [
         {
-          path: '', // Default: /dashboard
+          path: '', // URL: /dashboard
           name: 'dashboard',
           component: DashboardHome
         },
         {
-          path: 'birds',  // Jadi URL-nya: /dashboard/birds
+          path: 'birds', // URL: /dashboard/birds
           name: 'bird-list',
           component: BirdListView
         },
         {
-          path: 'pairs',
+          path: 'pairing', // URL: /dashboard/pairing
           name: 'pairing',
           component: PairingView
+        },
+        {
+          path: 'finance', // URL: /dashboard/finance
+          name: 'finance',
+          component: FinanceView
         }
       ]
+    },
+    
+    // Redirect jika halaman tidak ditemukan (404) ke Home
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/'
     }
   ]
 })
@@ -59,18 +75,21 @@ const router = createRouter({
 // --- NAVIGATION GUARD (SATPAM) ---
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  const isAuthenticated = authStore.isLoggedIn
+  
+  // Cek apakah user sudah login (berdasarkan state Pinia)
+  const isAuthenticated = authStore.isAuthenticated
 
-  // 1. Cek jika halaman butuh login (Dashboard)
+  // 1. Jika halaman BUTUH login (requiresAuth) tapi user BELUM login
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login') // Tendang ke login
+    next({ name: 'login' }) // Tendang ke login
   } 
-  // 2. Cek jika halaman khusus tamu (Login), tapi user sudah login
+  // 2. Jika halaman KHUSUS TAMU (guestOnly) tapi user SUDAH login
   else if (to.meta.guestOnly && isAuthenticated) {
-    next('/dashboard') // Lempar ke dashboard
+    next({ name: 'dashboard' }) // Lempar ke dashboard
   } 
+  // 3. Lolos seleksi, silakan masuk
   else {
-    next() // Lanjut
+    next()
   }
 })
 

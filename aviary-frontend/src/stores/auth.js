@@ -3,45 +3,47 @@ import Api from '../api';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    token: localStorage.getItem('token') || '', // Ambil dari storage jika di-refresh
     user: null,
+    isAuthenticated: false 
   }),
-  
-  getters: {
-    isLoggedIn: (state) => !!state.token, // Mengembalikan true jika token ada
-  },
 
   actions: {
-    async login(email, password) {
-      try {
-        const response = await Api.post('/auth/login', { email, password });
-        
-        // Simpan data dari response backend
-        this.token = response.data.token;
-        this.user = response.data.user;
-
-        // Simpan ke LocalStorage agar tidak hilang saat refresh
-        localStorage.setItem('token', this.token);
-        
-        return true; // Login sukses
-      } catch (error) {
-        throw error.response.data.error || 'Login Gagal';
-      }
-    },
+    // 1. REGISTER (Fungsi yang tadi hilang)
     async register(formData) {
       try {
-        // Kirim data: username, email, password
+        // Kirim data ke Backend
         await Api.post('/auth/register', formData);
-        return true; // Sukses
-      } catch (error) {
-        throw error.response?.data?.error || 'Registrasi Gagal';
+        // Jika sukses, return true
+        return true;
+      } catch (err) {
+        // Lempar error agar bisa ditangkap di RegisterView (untuk alert)
+        throw err;
       }
     },
-    logout() {
-      this.token = '';
-      this.user = null;
-      localStorage.removeItem('token');
-      // Redirect logic nanti diurus di component
+
+    // 2. LOGIN
+    async login(credentials) {
+      try {
+        await Api.post('/auth/login', credentials);
+        // Token otomatis diurus browser (Cookie), kita cukup set state jadi true
+        this.isAuthenticated = true;
+        return true;
+      } catch (err) {
+        throw err;
+      }
+    },
+
+    // 3. LOGOUT
+    async logout() {
+      try {
+        await Api.post('/auth/logout');
+      } catch (e) {
+        console.error("Logout error", e);
+      } finally {
+        this.isAuthenticated = false;
+        this.user = null;
+        window.location.href = '/login';
+      }
     }
   }
 });

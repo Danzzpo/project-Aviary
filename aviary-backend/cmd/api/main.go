@@ -24,17 +24,15 @@ func main() {
 	// 2. Connect DB & Migrate
 	config.ConnectDatabase()
 
-	// --- UPDATE MIGRASI DI SINI ---
-	// Menambahkan model Production dan Egg
-	// Kita gunakan Set table options InnoDB untuk keamanan relasi
-	err = config.DB.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(
-		&models.User{}, 
-		&models.Bird{}, 
-		&models.Pair{}, 
-		&models.Production{}, // <--- BARU
-		&models.Egg{},        // <--- BARU
+	// Pastikan semua tabel terdaftar di sini
+	err = config.DB.AutoMigrate(
+		&models.User{},
+		&models.Bird{},
+		&models.Pair{},
+		&models.Production{},
+		&models.Egg{},
+		&models.Transaction{},
 	)
-	
 	if err != nil {
 		log.Fatal("Gagal migrasi:", err)
 	}
@@ -42,49 +40,57 @@ func main() {
 	// 3. Setup Router
 	r := gin.Default()
 
-	// --- SETUP CORS ---
+	// --- SETUP CORS (SANGAT PENTING UNTUK COOKIE) ---
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:5174"}, // Izinkan 5173 & 5174 jaga-jaga
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
+    AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"}, 
+    AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+    AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+    ExposeHeaders:    []string{"Content-Length"},
+    AllowCredentials: true, 
+    MaxAge:           12 * time.Hour,
 	}))
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Pong!", "status": "online"})
 	})
 
-	// Public Routes
+	// --- AUTH ROUTES (PUBLIC) ---
 	auth := r.Group("/api/auth")
 	{
 		auth.POST("/register", controllers.Register)
 		auth.POST("/login", controllers.Login)
+		auth.POST("/refresh", controllers.RefreshToken) 
+		auth.POST("/logout", controllers.Logout)       
 	}
 
-	// Protected Routes
+	// --- PROTECTED ROUTES (BUTUH LOGIN) ---
 	protected := r.Group("/api")
-	protected.Use(middleware.AuthMiddleware())
+	protected.Use(middleware.AuthMiddleware()) // Middleware Cek Cookie
 	{
 		// Birds
 		protected.GET("/birds", controllers.GetBirds)
 		protected.POST("/birds", controllers.CreateBird)
 		protected.PUT("/birds/:id", controllers.UpdateBird)
-		
+
 		// Dashboard
 		protected.GET("/dashboard/stats", controllers.GetDashboardStats)
-		
+
 		// Pairing (Penjodohan)
 		protected.GET("/pairs", controllers.GetActivePairs)
 		protected.POST("/pairs", controllers.CreatePair)
 		protected.PUT("/pairs/:id/disband", controllers.DisbandPair)
 
-		// --- PRODUCTION & EGGS (BARU) ---
-		protected.GET("/pairs/:pair_id/production", controllers.GetActiveProduction) // Cek status telur
-		protected.POST("/pairs/:pair_id/eggs", controllers.AddEgg)                   // Tambah telur
-		protected.PUT("/eggs/:egg_id/status", controllers.UpdateEggStatus)           // Update (Menetas/Zonk)
+		// Production & Eggs
+		protected.GET("/pairs/:pair_id/production", controllers.GetActiveProduction)
+		protected.POST("/pairs/:pair_id/eggs", controllers.AddEgg)
+		protected.PUT("/eggs/:egg_id/status", controllers.UpdateEggStatus)
 		protected.DELETE("/eggs/:egg_id", controllers.DeleteEgg)
+
+		// Finance
+		protected.GET("/finance", controllers.GetTransactions)
+		protected.GET("/finance/summary", controllers.GetFinanceSummary)
+		protected.POST("/finance", controllers.CreateTransaction)
+		protected.DELETE("/finance/:id", controllers.DeleteTransaction)
 	}
 
 	port := os.Getenv("PORT")
