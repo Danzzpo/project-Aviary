@@ -52,7 +52,7 @@ const router = createRouter({
           component: BirdListView
         },
         {
-          path: 'pairing', // URL: /dashboard/pairing
+          path: 'pairs', // URL: /dashboard/pairing
           name: 'pairing',
           component: PairingView
         },

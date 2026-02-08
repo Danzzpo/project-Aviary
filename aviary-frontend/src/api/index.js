@@ -5,20 +5,36 @@ const Api = axios.create({
     withCredentials: true, 
 });
 
-// INTERCEPTOR (PENTING!)
-// Fungsi ini otomatis jalan SEBELUM request dikirim ke backend
-Api.interceptors.request.use(
-  (config) => {
-    // Ambil token dari LocalStorage (kita akan simpan di sini nanti)
-    const token = localStorage.getItem('token');
-    
-    if (token) {
-      // Tempelkan token ke Header: "Authorization: Bearer <token>"
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+// INTERCEPTOR RESPONSE (RAHASIA AGAR TIDAK LOGOUT SENDIRI)
+// Fungsi ini otomatis jalan SETELAH menerima jawaban dari backend
+Api.interceptors.response.use(
+  (response) => {
+    return response; // Jika sukses (200 OK), lanjut.
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Cek: Apakah errornya 401 (Unauthorized) DAN belum pernah dicoba ulang?
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      
+      originalRequest._retry = true;
+
+      try {
+        // Minta Backend perbarui cookie (Browser otomatis bawa refresh_token)
+        await Api.post('/auth/refresh');
+
+        // Jika sukses refresh, panggil ulang request awal yang tadi gagal
+        return Api(originalRequest);
+
+      } catch (refreshError) {
+        // Jika Refresh gagal (berarti sesi 7 hari habis)
+        console.error("Sesi habis, login ulang.");
+        // Redirect paksa ke login
+        window.location.href = '/login'; 
+        return Promise.reject(refreshError);
+      }
+    }
+
     return Promise.reject(error);
   }
 );

@@ -7,10 +7,10 @@ import {
   Bird, 
   Heart, 
   DollarSign, 
-  User, 
   LogOut, 
   Menu, 
-  X 
+  X, 
+  SettingsIcon
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -23,7 +23,7 @@ const menuItems = [
   { name: 'Stok Burung', path: '/dashboard/birds', icon: Bird },
   { name: 'Penjodohan', path: '/dashboard/pairs', icon: Heart },
   { name: 'Keuangan', path: '/dashboard/finance', icon: DollarSign },
-  { name: 'Profil', path: '/dashboard/profile', icon: User },
+  { name: 'Pengaturan', path: '/dashboard/pengaturan', icon: SettingsIcon },
 ];
 
 const handleLogout = () => {

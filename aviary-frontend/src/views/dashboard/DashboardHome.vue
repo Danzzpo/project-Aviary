@@ -25,7 +25,7 @@ onMounted(() => {
         <h1 class="text-2xl font-bold text-slate-800">Dashboard Overview</h1>
         <p class="text-slate-500">Pantau perkembangan ternak Anda secara real-time.</p>
       </div>
-      <router-link to="/dashboard/pairing" class="flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition">
+      <router-link to="/dashboard/pairs" class="flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition">
         Ke Penjodohan <ArrowRight :size="16" />
       </router-link>
     </div>
