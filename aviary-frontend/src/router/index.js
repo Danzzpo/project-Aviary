@@ -12,6 +12,7 @@ import DashboardHome from '../views/dashboard/DashboardHome.vue'
 import BirdListView from '../views/dashboard/BirdListView.vue'
 import PairingView from '../views/dashboard/PairingView.vue'
 import FinanceView from '../views/dashboard/FinanceView.vue'
+import SettingsView from '../views/dashboard/SettingsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -60,6 +61,11 @@ const router = createRouter({
           path: 'finance', // URL: /dashboard/finance
           name: 'finance',
           component: FinanceView
+        },
+        {
+          path: 'settings', 
+          name: 'settings', 
+          component: SettingsView 
         }
       ]
     },

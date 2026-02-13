@@ -23,7 +23,7 @@ const menuItems = [
   { name: 'Stok Burung', path: '/dashboard/birds', icon: Bird },
   { name: 'Penjodohan', path: '/dashboard/pairs', icon: Heart },
   { name: 'Keuangan', path: '/dashboard/finance', icon: DollarSign },
-  { name: 'Pengaturan', path: '/dashboard/pengaturan', icon: SettingsIcon },
+  { name: 'Pengaturan', path: '/dashboard/Settings', icon: SettingsIcon },
 ];
 
 const handleLogout = () => {
@@ -40,7 +40,6 @@ const handleLogout = () => {
       :class="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
       <div class="h-16 flex items-center px-6 border-b border-slate-800">
-        <Bird class="text-emerald-500 mr-2" :size="24" />
         <span class="text-xl font-bold tracking-wide">Aviary<span class="text-emerald-500">Pro</span></span>
       </div>
 

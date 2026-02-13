@@ -42,31 +42,39 @@ func main() {
 
 	// --- SETUP CORS (SANGAT PENTING UNTUK COOKIE) ---
 	r.Use(cors.New(cors.Config{
-    AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"}, 
-    AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-    AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-    ExposeHeaders:    []string{"Content-Length"},
-    AllowCredentials: true, 
-    MaxAge:           12 * time.Hour,
+		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
 	}))
+
+	// --- TAMBAHAN 1: AKSES FOLDER UPLOADS ---
+	// Ini wajib agar Frontend bisa menampilkan foto profil (misal: http://localhost:8080/uploads/avatars/...)
+	r.Static("/uploads", "./uploads") 
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Pong!", "status": "online"})
 	})
 
-	// --- AUTH ROUTES (PUBLIC) ---
+	// --- AUTH ROUTES (PUBLIC - Tidak Butuh Login) ---
 	auth := r.Group("/api/auth")
 	{
 		auth.POST("/register", controllers.Register)
 		auth.POST("/login", controllers.Login)
-		auth.POST("/refresh", controllers.RefreshToken) 
-		auth.POST("/logout", controllers.Logout)       
+		auth.POST("/refresh", controllers.RefreshToken)
+		auth.POST("/logout", controllers.Logout)
 	}
 
 	// --- PROTECTED ROUTES (BUTUH LOGIN) ---
 	protected := r.Group("/api")
-	protected.Use(middleware.AuthMiddleware()) // Middleware Cek Cookie
+	protected.Use(middleware.AuthMiddleware())
 	{
+		// --- TAMBAHAN 2: ROUTE UPDATE PROFILE ---
+		// Route ini ditaruh di sini karena butuh login (ambil ID user dari token)
+		protected.PUT("/auth/profile", controllers.UpdateProfile)
+
 		// Birds
 		protected.GET("/birds", controllers.GetBirds)
 		protected.POST("/birds", controllers.CreateBird)
